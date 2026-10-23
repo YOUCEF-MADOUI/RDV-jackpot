@@ -1,0 +1,26 @@
+{
+  "site": "demo-local",
+  "start_url": "http://127.0.0.1:8000/inscription",
+  "allowed_hosts": ["127.0.0.1", "localhost"],
+  "authorized": true,
+  "authorization_note": "Site de démonstration fourni avec le dépôt (demo/server.py) : nous en sommes propriétaires.",
+  "success_text": "Inscription confirmée",
+  "min_interval_seconds": 30,
+  "steps": [
+    {"action": "wait_for", "selector": "#first_name"},
+    {"action": "fill", "selector": "#first_name", "value": "{{ first_name }}"},
+    {"action": "fill", "selector": "#last_name", "value": "{{ last_name }}"},
+    {"action": "fill", "selector": "#email", "value": "{{ email }}"},
+    {"action": "fill", "selector": "#phone", "value": "{{ phone }}"},
+    {"action": "fill", "selector": "#birthdate", "value": "{{ birthdate }}"},
+    {"action": "fill", "selector": "#address_line1", "value": "{{ address_line1 }}"},
+    {"action": "fill", "selector": "#postal_code", "value": "{{ postal_code }}"},
+    {"action": "fill", "selector": "#city", "value": "{{ city }}"},
+    {"action": "fill", "selector": "#country", "value": "{{ country }}"},
+    {"action": "fill", "selector": "#password", "secret_env": "DEMO_PASSWORD"},
+    {"action": "upload", "selector": "#photo", "value": "{{ photo_path }}"},
+    {"action": "check", "selector": "#terms"},
+    {"action": "click", "selector": "button[type=submit]"},
+    {"action": "assert_text", "contains": "Inscription confirmée", "timeout_ms": 20000}
+  ]
+}

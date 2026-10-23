@@ -1,0 +1,12 @@
+# Dépendances du projet (Python 3.10+)
+#
+# Le cœur (profils, recettes, runner, tests) n'utilise QUE la bibliothèque standard.
+# Playwright n'est nécessaire que pour piloter un vrai navigateur.
+
+playwright>=1.44,<2
+
+# Optionnel : interface web d'administration (voir docs/ARCHITECTURE.md, phase 3)
+# fastapi>=0.111
+# uvicorn[standard]>=0.30
+# pydantic>=2.7
+# jinja2>=3.1

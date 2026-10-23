@@ -1,0 +1,23 @@
+{
+  "profile_id": "demo-alice",
+  "first_name": "Alice",
+  "last_name": "Benali",
+  "email": "alice.benali@example.com",
+  "phone": "+213555123456",
+  "birthdate": "1994-06-12",
+  "address": {
+    "line1": "12 rue des Oliviers",
+    "line2": "",
+    "postal_code": "19000",
+    "city": "Sétif",
+    "country": "DZ"
+  },
+  "photo": "photos/alice.png",
+  "password_env": "DEMO_PASSWORD",
+  "locale": "fr",
+  "consents": {
+    "terms": true,
+    "data_processing": true
+  },
+  "_note": "Données entièrement fictives. Remplacez la photo par la vraie, ou gardez ce profil pour les tests."
+}

@@ -1,0 +1,30 @@
+{
+  "site": "mon-portail-interne",
+  "start_url": "https://mon-portail.example/inscription",
+  "allowed_hosts": ["mon-portail.example"],
+  "authorized": false,
+  "authorization_note": "À RENSEIGNER : 'site interne, autorisation écrite du AAAA-MM-JJ'. Tant que 'authorized' vaut false, l'exécution est refusée.",
+  "success_text": "Votre compte a bien été créé",
+  "min_interval_seconds": 60,
+  "locale": "fr-FR",
+  "steps": [
+    {"action": "wait_for", "selector": "#signup-first-name"},
+    {"action": "fill", "selector": "#signup-first-name", "value": "{{ first_name }}"},
+    {"action": "fill", "selector": "#signup-last-name", "value": "{{ last_name }}"},
+    {"action": "fill", "selector": "#signup-email", "value": "{{ email }}"},
+    {"action": "fill", "selector": "#signup-phone", "value": "{{ phone }}"},
+    {"action": "fill", "selector": "#signup-birthdate", "value": "{{ birthdate }}"},
+    {"action": "fill", "selector": "#signup-address", "value": "{{ address_line1 }}"},
+    {"action": "fill", "selector": "#signup-zip", "value": "{{ postal_code }}"},
+    {"action": "fill", "selector": "#signup-city", "value": "{{ city }}"},
+    {"action": "fill", "selector": "#signup-password", "secret_env": "SIGNUP_PASSWORD"},
+    {"action": "upload", "selector": "#signup-avatar", "value": "{{ photo_path }}"},
+    {"action": "check", "selector": "#accept-terms"},
+    {"action": "click", "selector": "button[type=submit]"},
+    {
+      "action": "pause_for_human",
+      "prompt": "Un code de vérification a été envoyé au propriétaire du compte : saisissez-le dans le navigateur, puis appuyez sur Entrée."
+    },
+    {"action": "assert_text", "contains": "Votre compte a bien été créé", "timeout_ms": 30000}
+  ]
+}
