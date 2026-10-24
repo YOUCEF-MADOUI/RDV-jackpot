@@ -3,6 +3,39 @@
 Ce document complète le README : il détaille le modèle de données, le cycle
 d'exécution, la façon d'ajouter un site, et les points d'extension.
 
+## 0. Mode boucle (connexion → actions → notification → recommencer)
+
+```
+run()
+ ├─ préflight : autorisation, hôtes, secrets présents, débit autorisé
+ ├─ adaptateur.start(session)      ← session réutilisée si valide
+ ├─ login  : logged_in_when ? → sinon steps → success_when (attente bornée)
+ ├─ open(start_url)
+ └─ boucle :
+      pour chaque essai (≤ max_attempts, ≤ max_duration_seconds) :
+        1. (essai 1 seulement) pré-contrôle indulgent : succès/arrêt déjà là ?
+        2. reset_steps  → état connu
+        3. steps        → boutons prédéfinis
+        4. observe : success_when → SUCCÈS
+                     stop_when    → ARRÊT
+                     retry_when   → pause (intervalle + jitter, back-off) → essai suivant
+                     sinon        → ABANDON (pas de clic au hasard)
+      épuisement → EXHAUSTED (notification envoyée)
+```
+
+Ordre de priorité **succès > arrêt > réessai > abandon** : il doit être explicite
+dans le code, sinon une page contenant à la fois « Réservation confirmée » et
+« Aucun créneau disponible » (historique, bandeau) provoque des comportements
+incohérents. Les conditions sont des **observations** (jamais des actions) et ne
+lèvent pas d'exception quand l'élément est absent.
+
+Débit : `effective_loop()` remonte l'intervalle au plancher de politesse
+(15 s sur un site distant, 1 s sur `127.0.0.1`/`localhost`) et applique un plafond
+de 500 essais. Le jitter évite une cadence parfaitement mécanique.
+
+Durées d'attente et horloge sont injectables (`sleep=`, `clock=`) : les tests
+utilisent une horloge virtuelle, donc aucun test n'attend réellement.
+
 ## 1. Modèle de données
 
 ### Profil (`profiles/*.profile.json`)

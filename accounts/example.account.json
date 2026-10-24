@@ -1,0 +1,9 @@
+{
+  "account_id": "demo-alice",
+  "site": "demo-local",
+  "username": "alice",
+  "password_env": "DEMO_PASSWORD",
+  "profile": "../profiles/example.profile.json",
+  "enabled": true,
+  "note": "Compte du site de démonstration local (demo/server.py). Le mot de passe n'est PAS dans ce fichier : exportez DEMO_PASSWORD avant de lancer un run."
+}

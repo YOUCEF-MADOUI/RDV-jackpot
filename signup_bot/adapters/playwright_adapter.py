@@ -11,7 +11,7 @@ action humaine — pas un contournement technique.
 
 from __future__ import annotations
 
-import os
+import shutil
 from pathlib import Path
 
 from ..errors import AutomationError
@@ -32,19 +32,22 @@ class PlaywrightAdapter(Adapter):
         locale: str = "fr-FR",
         user_agent: str = "",
         slow_mo_ms: int = 0,
+        channel: str = "",
     ):
         self.headless = headless
         self.browser_name = browser
         self.locale = locale
         self.user_agent = user_agent or DEFAULT_USER_AGENT
         self.slow_mo_ms = slow_mo_ms
+        self.channel = channel
         self._playwright = None
         self._browser = None
         self._context = None
+        self._storage_state: Path | None = None
         self.page = None
 
     # ------------------------------------------------------------- cycle de vie
-    def start(self) -> None:
+    def start(self, storage_state: Path | None = None) -> None:
         try:
             from playwright.sync_api import sync_playwright
         except ImportError as exc:  # pragma: no cover - dépend de l'environnement
@@ -54,12 +57,21 @@ class PlaywrightAdapter(Adapter):
                 "  playwright install chromium"
             ) from exc
 
+        if storage_state is not None and not Path(storage_state).is_file():
+            storage_state = None
+        self._storage_state = Path(storage_state) if storage_state else None
+
         self._playwright = sync_playwright().start()
         launcher = getattr(self._playwright, self.browser_name, None)
         if launcher is None:
+            self._playwright.stop()
+            self._playwright = None
             raise AutomationError(f"navigateur Playwright inconnu : {self.browser_name!r}")
+        kwargs = {"headless": self.headless, "slow_mo": self.slow_mo_ms}
+        if self.channel:
+            kwargs["channel"] = self.channel
         try:
-            self._browser = launcher.launch(headless=self.headless, slow_mo=self.slow_mo_ms)
+            self._browser = launcher.launch(**kwargs)
         except Exception as exc:  # noqa: BLE001 - message d'aide à l'utilisateur
             self._playwright.stop()
             self._playwright = None
@@ -67,14 +79,29 @@ class PlaywrightAdapter(Adapter):
                 f"impossible de démarrer {self.browser_name} : {exc}\n"
                 f"Installez le navigateur avec : playwright install {self.browser_name}"
             ) from exc
-        self._context = self._browser.new_context(
-            locale=self.locale,
-            user_agent=self.user_agent,
-            viewport={"width": 1366, "height": 900},
-            accept_downloads=False,
-        )
+
+        context_kwargs = {
+            "locale": self.locale,
+            "user_agent": self.user_agent,
+            "viewport": {"width": 1366, "height": 900},
+            "accept_downloads": False,
+        }
+        if self._storage_state is not None:
+            context_kwargs["storage_state"] = str(self._storage_state)
+        self._context = self._browser.new_context(**context_kwargs)
         self._context.set_default_timeout(15_000)
         self.page = self._context.new_page()
+
+    def save_storage_state(self, path: Path) -> None:
+        """Persiste cookies + localStorage : la prochaine fois, pas de reconnexion."""
+        if self._context is None:
+            return
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            self._context.storage_state(path=str(path))
+        except Exception:  # noqa: BLE001 - non bloquant
+            pass
 
     def close(self) -> None:
         for closer in (self._context, self._browser):
@@ -98,6 +125,12 @@ class PlaywrightAdapter(Adapter):
 
     def open(self, url: str) -> None:
         self._page().goto(url, wait_until="domcontentloaded")
+
+    def current_url(self) -> str:
+        return self.page.url if self.page is not None else ""
+
+    def navigate_back(self) -> None:
+        self._page().go_back(wait_until="domcontentloaded")
 
     def fill(self, selector: str, value: str, timeout_ms: int) -> None:
         self._page().fill(selector, value, timeout=timeout_ms)
@@ -124,6 +157,22 @@ class PlaywrightAdapter(Adapter):
 
     def assert_text(self, text: str, timeout_ms: int) -> None:
         self._page().get_by_text(text, exact=False).first.wait_for(timeout=timeout_ms)
+
+    def text_present(self, text: str, timeout_ms: int) -> bool:
+        try:
+            self._page().get_by_text(text, exact=False).first.wait_for(
+                timeout=timeout_ms, state="visible"
+            )
+            return True
+        except Exception:  # noqa: BLE001 - absence = réponse négative, pas une erreur
+            return False
+
+    def selector_present(self, selector: str, timeout_ms: int) -> bool:
+        try:
+            self._page().wait_for_selector(selector, timeout=timeout_ms, state="visible")
+            return True
+        except Exception:  # noqa: BLE001
+            return False
 
     def pause_for_human(self, prompt: str) -> None:
         if self.headless:

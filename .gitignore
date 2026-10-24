@@ -1,6 +1,8 @@
 # Données personnelles et artefacts d'exécution : jamais dans Git
 profiles/**/*.profile.json
 !profiles/example.profile.json
+accounts/**/*.account.json
+!accounts/example.account.json
 artifacts/
 demo/submissions/
 *.log

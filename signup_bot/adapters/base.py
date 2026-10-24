@@ -26,9 +26,17 @@ class AdapterError(RuntimeError):
 class Adapter(ABC):
     """Contrat minimal attendu par le runner."""
 
+    # ------------------------------------------------------------- navigation
     @abstractmethod
     def open(self, url: str) -> None: ...
 
+    @abstractmethod
+    def current_url(self) -> str: ...
+
+    def navigate_back(self) -> None:
+        raise AdapterError("navigate_back non pris en charge par cet adaptateur")
+
+    # ---------------------------------------------------------------- saisie
     @abstractmethod
     def fill(self, selector: str, value: str, timeout_ms: int) -> None: ...
 
@@ -53,6 +61,16 @@ class Adapter(ABC):
     @abstractmethod
     def assert_text(self, text: str, timeout_ms: int) -> None: ...
 
+    # ------------------------------------------------------------ observation
+    @abstractmethod
+    def text_present(self, text: str, timeout_ms: int) -> bool:
+        """Vrai si ce texte est visible sur la page. N'échoue jamais : répond oui/non."""
+
+    @abstractmethod
+    def selector_present(self, selector: str, timeout_ms: int) -> bool:
+        """Vrai si au moins un élément correspondant est visible. N'échoue jamais."""
+
+    # ------------------------------------------------------------------ divers
     def pause_for_human(self, prompt: str) -> None:
         """Point de passage humain (CAPTCHA, OTP, vérification d'identité)."""
         raise AdapterError(
@@ -64,6 +82,12 @@ class Adapter(ABC):
         import time
 
         time.sleep(milliseconds / 1000)
+
+    def start(self, storage_state: Path | None = None) -> None:
+        """Démarre le moteur, éventuellement avec une session déjà authentifiée."""
+
+    def save_storage_state(self, path: Path) -> None:
+        """Persiste les cookies/session pour éviter de se reconnecter à chaque run."""
 
     def screenshot(self, path: Path) -> None:
         """Optionnel : capture l'état de la page (utile en cas d'échec)."""

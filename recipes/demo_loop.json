@@ -1,0 +1,51 @@
+{
+  "site": "demo-local",
+  "start_url": "http://127.0.0.1:8000/espace",
+  "allowed_hosts": ["127.0.0.1", "localhost"],
+  "authorized": true,
+  "authorization_note": "Site de démonstration fourni avec le dépôt (demo/server.py) : nous en sommes propriétaires.",
+  "min_interval_seconds": 30,
+  "notify": ["success", "stopped", "abandoned", "exhausted", "failed"],
+
+  "login": {
+    "url": "http://127.0.0.1:8000/connexion",
+    "reuse_session": true,
+    "steps": [
+      {"action": "wait_for", "selector": "#username"},
+      {"action": "fill", "selector": "#username", "secret_field": "username"},
+      {"action": "fill", "selector": "#password", "secret_field": "password"},
+      {"action": "click", "selector": "button[type=submit]"}
+    ],
+    "success_when": [
+      {"kind": "selector", "selector": "#reserver", "description": "espace client affiché"}
+    ],
+    "logged_in_when": [
+      {"kind": "selector", "selector": "#reserver", "description": "session déjà valide"}
+    ]
+  },
+
+  "loop": {
+    "reset_steps": [
+      {"action": "goto", "value": "http://127.0.0.1:8000/espace"}
+    ],
+    "steps": [
+      {"action": "click", "selector": "#reserver", "timeout_ms": 20000}
+    ],
+    "evaluate_before_steps": true,
+    "retry_when": [
+      {"kind": "text", "contains": "Aucun créneau disponible", "description": "notification : aucun créneau"}
+    ],
+    "success_when": [
+      {"kind": "text", "contains": "Réservation confirmée", "description": "créneau obtenu"}
+    ],
+    "stop_when": [
+      {"kind": "text", "contains": "Compte suspendu", "description": "compte bloqué : on arrête"}
+    ],
+    "max_attempts": 10,
+    "max_duration_seconds": 900,
+    "interval_seconds": 5,
+    "max_interval_seconds": 60,
+    "backoff_factor": 1.2,
+    "jitter_seconds": 1
+  }
+}
